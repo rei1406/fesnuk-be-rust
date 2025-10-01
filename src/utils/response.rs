@@ -6,8 +6,8 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct GenericResponse<T> {
+    pub status: u16,
     pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>
 }
 
@@ -44,6 +44,7 @@ impl<T: Serialize> IntoResponse for ApiResponse<T> {
     fn into_response(self) -> axum::response::Response {
         let status = self.status.unwrap_or(StatusCode::OK);
         let response = Json(serde_json::json!(GenericResponse {
+            status: status.as_u16(),
             data: self.body.as_ref(),
             message: self.message.to_string()
         }));
