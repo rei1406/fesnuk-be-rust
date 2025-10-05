@@ -1,19 +1,10 @@
 // @generated automatically by Diesel CLI.
 
-pub mod sql_types {
-    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
-    #[diesel(postgres_type(name = "ltree"))]
-    pub struct Ltree;
-}
-
 diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::Ltree;
-
     comments (id) {
         id -> Int4,
         post_id -> Int4,
-        path -> Ltree,
+        parent_id -> Nullable<Int4>,
         content -> Text,
         attachments -> Jsonb,
         reactions -> Jsonb,
