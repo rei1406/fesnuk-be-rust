@@ -28,6 +28,7 @@ diesel::table! {
         id -> Varchar,
         name -> Varchar,
         description -> Text,
+        image -> Nullable<Varchar>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
         deleted_at -> Nullable<Timestamp>,
