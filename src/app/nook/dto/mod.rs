@@ -7,6 +7,7 @@ pub struct CreateNookDto {
     pub id: String,
     pub name: String,
     pub description: String,
+    pub image: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -14,6 +15,7 @@ pub struct UpdateNookDto {
     pub id: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
+    pub image: Option<String>,
 }
 
 impl CreateNookDto {
@@ -22,6 +24,7 @@ impl CreateNookDto {
             id: self.id,
             name: self.name,
             description: self.description,
+            image: self.image,
         }
     }
 }
@@ -32,6 +35,7 @@ impl UpdateNookDto {
             id: self.id,
             name: self.name,
             description: self.description,
+            image: self.image,
         }
     }
 }
@@ -41,6 +45,7 @@ pub struct NookResponse {
     pub id: String,
     pub name: String,
     pub description: String,
+    pub image: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -51,6 +56,7 @@ impl From<Nook> for NookResponse {
             id: nook.id,
             name: nook.name,
             description: nook.description,
+            image: nook.image,
             created_at: nook.created_at,
             updated_at: nook.updated_at,
         }

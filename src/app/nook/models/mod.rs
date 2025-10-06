@@ -17,10 +17,12 @@ pub struct NewNook {
     pub id: String,
     pub name: String,
     pub description: String,
+    pub image: Option<String>,
 }
 
 pub struct NookChanges {
     pub id: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
+    pub image: Option<String>,
 }
