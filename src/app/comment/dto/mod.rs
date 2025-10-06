@@ -70,8 +70,8 @@ pub struct CommentResponse {
     pub reply_count: i64,
 }
 
-impl CommentResponse {
-    pub fn from_comment_with_reply_count(comment: Comment, reply_count: i64) -> Self {
+impl From<Comment> for CommentResponse {
+    fn from(comment: Comment) -> Self {
         Self {
             id: comment.id,
             post_id: comment.post_id,
@@ -81,7 +81,7 @@ impl CommentResponse {
             reactions: comment.reactions,
             created_at: comment.created_at,
             updated_at: comment.updated_at,
-            reply_count,
+            reply_count: 0, // Default to 0, can be updated separately if needed
         }
     }
 }

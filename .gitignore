@@ -14,3 +14,4 @@ __azurite_db*__.json
 .vscode
 target/
 .env
+.sqlx

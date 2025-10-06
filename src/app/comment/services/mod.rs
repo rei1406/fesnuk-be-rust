@@ -1,97 +1,70 @@
 use crate::app::comment::{
-    dto::{CommentResponse, CreateCommentDto, ReactCommentDto, ReplyCommentDto},
+    dto::{CommentResponse, CreateCommentDto, ReplyCommentDto},
     repositories::CommentRepository,
+    models::{NewComment},
 };
-use diesel::result::Error;
-use diesel::PgConnection;
-use serde_json::{Map, Value};
+use sqlx::{PgPool, Error};
+use serde_json::{Value};
 
 pub struct CommentService;
 
 impl CommentService {
-    pub fn get_root_comments_by_post_id(
-        conn: &mut PgConnection,
+    pub async fn get_all_comments(pool: &PgPool) -> Result<Vec<CommentResponse>, Error> {
+        let comments = CommentRepository::find_all(pool).await?;
+        Ok(comments.into_iter().map(CommentResponse::from).collect())
+    }
+
+    pub async fn get_comments_by_post_id(
+        pool: &PgPool,
         post_id: i32,
     ) -> Result<Vec<CommentResponse>, Error> {
-        let comments = CommentRepository::get_root_comments_by_post_id(conn, post_id)?;
-        
-        let mut comment_responses = Vec::new();
-        for comment in comments {
-            let reply_count = CommentRepository::count_replies_by_parent_id(conn, comment.id)?;
-            comment_responses.push(CommentResponse::from_comment_with_reply_count(comment, reply_count));
-        }
-        
-        Ok(comment_responses)
+        let comments = CommentRepository::find_by_post_id(pool, post_id).await?;
+        Ok(comments.into_iter().map(CommentResponse::from).collect())
     }
 
-    pub fn get_direct_children_by_parent_id(
-        conn: &mut PgConnection,
-        parent_id: i32,
-    ) -> Result<Vec<CommentResponse>, Error> {
-        let comments = CommentRepository::get_direct_children_by_parent_id(conn, parent_id)?;
-        
-        let mut comment_responses = Vec::new();
-        for comment in comments {
-            let reply_count = CommentRepository::count_replies_by_parent_id(conn, comment.id)?;
-            comment_responses.push(CommentResponse::from_comment_with_reply_count(comment, reply_count));
-        }
-        
-        Ok(comment_responses)
-    }
-
-    pub fn create_root_comment(
-        conn: &mut PgConnection,
-        create_dto: CreateCommentDto,
+    pub async fn get_comment_by_id(
+        pool: &PgPool,
+        comment_id: i32,
     ) -> Result<CommentResponse, Error> {
-        let new_comment = create_dto.to_new_comment();
-        let comment = CommentRepository::create_comment(conn, new_comment)?;
-        let reply_count = CommentRepository::count_replies_by_parent_id(conn, comment.id)?;
-        Ok(CommentResponse::from_comment_with_reply_count(comment, reply_count))
+        let comment = CommentRepository::find_by_id(pool, comment_id).await?;
+        Ok(CommentResponse::from(comment))
     }
 
-    pub fn reply_to_comment(
-        conn: &mut PgConnection,
-        reply_dto: ReplyCommentDto,
+    pub async fn create_comment(
+        pool: &PgPool,
+        dto: CreateCommentDto,
     ) -> Result<CommentResponse, Error> {
-        let new_comment = reply_dto.to_new_comment();
-        let comment = CommentRepository::create_comment(conn, new_comment)?;
-        let reply_count = CommentRepository::count_replies_by_parent_id(conn, comment.id)?;
-        Ok(CommentResponse::from_comment_with_reply_count(comment, reply_count))
-    }
-
-    pub fn react_to_comment(
-        conn: &mut PgConnection,
-        react_dto: ReactCommentDto,
-    ) -> Result<CommentResponse, Error> {
-        let reaction = react_dto.to_comment_reaction();
-        let comment = CommentRepository::get_comment_by_id(conn, reaction.comment_id)?;
-        
-        let mut reactions_map = match comment.reactions.as_object() {
-            Some(map) => map.clone(),
-            None => Map::new(),
+        let new_comment = NewComment {
+            post_id: dto.post_id,
+            parent_id: None,
+            content: dto.content,
+            attachments: dto.attachments.unwrap_or(Value::Array(vec![])),
         };
-
-        let current_count = reactions_map
-            .get(&reaction.unicode)
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-
-        let new_count = current_count + reaction.action as i64;
         
-        if new_count <= 0 {
-            reactions_map.remove(&reaction.unicode);
-        } else {
-            reactions_map.insert(reaction.unicode, Value::Number(new_count.into()));
-        }
+        let comment = CommentRepository::create(pool, new_comment).await?;
+        Ok(CommentResponse::from(comment))
+    }
 
-        let updated_reactions = Value::Object(reactions_map);
-        let updated_comment = CommentRepository::update_comment_reactions(
-            conn,
-            reaction.comment_id,
-            updated_reactions,
-        )?;
+    pub async fn reply_to_comment(
+        pool: &PgPool,
+        dto: ReplyCommentDto,
+    ) -> Result<CommentResponse, Error> {
+        let new_comment = NewComment {
+            post_id: dto.post_id,
+            parent_id: Some(dto.parent_id),
+            content: dto.content,
+            attachments: dto.attachments.unwrap_or(Value::Array(vec![])),
+        };
         
-        let reply_count = CommentRepository::count_replies_by_parent_id(conn, updated_comment.id)?;
-        Ok(CommentResponse::from_comment_with_reply_count(updated_comment, reply_count))
+        let comment = CommentRepository::create(pool, new_comment).await?;
+        Ok(CommentResponse::from(comment))
+    }
+
+    pub async fn delete_comment(
+        pool: &PgPool,
+        comment_id: i32,
+    ) -> Result<CommentResponse, Error> {
+        let comment = CommentRepository::delete(pool, comment_id).await?;
+        Ok(CommentResponse::from(comment))
     }
 }

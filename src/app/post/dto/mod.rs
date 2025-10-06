@@ -1,4 +1,4 @@
-use crate::app::post::models::Reaction;
+use crate::app::post::models::PostReaction;
 
 use super::models::{NewPost, Post, PostChanges};
 use chrono::NaiveDateTime;
@@ -18,6 +18,7 @@ pub struct UpdatePostDto {
     pub title: Option<String>,
     pub content: Option<String>,
     pub attachments: Option<Value>,
+    pub nook_id: Option<String>,
 }
 
 impl CreatePostDto {
@@ -37,6 +38,7 @@ impl UpdatePostDto {
             title: self.title,
             content: self.content,
             attachments: self.attachments,
+            nook_id: self.nook_id,
         }
     }
 }
@@ -49,8 +51,8 @@ pub struct ReactPostDto {
 }
 
 impl ReactPostDto {
-    pub fn to_reaction(self) -> Reaction {
-        Reaction {
+    pub fn to_reaction(self) -> PostReaction {
+        PostReaction {
             post_id: self.post_id,
             unicode: self.unicode,
             action: self.action,

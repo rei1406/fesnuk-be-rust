@@ -24,15 +24,10 @@ pub fn post_routes() -> Router<DBPool> {
 }
 
 async fn get_posts(State(pool): State<DBPool>) -> ApiResponse<Vec<PostResponse>> {
-    let mut conn = match pool.get() {
-        Ok(conn) => conn,
-        Err(_) => return ApiResponse::error("Database connection error".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
-    };
-
-    match PostService::get_all_posts(&mut conn) {
+    match PostService::get_all_posts(&pool).await {
         Ok(posts) => ApiResponse::success(
             "Posts retrieved successfully".to_string(),
-            Some(posts),
+            Some(posts.into_iter().map(|p| p.into()).collect()),
             Some(StatusCode::OK),
         ),
         Err(_) => ApiResponse::error("Failed to retrieve posts".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
@@ -43,15 +38,10 @@ async fn get_posts_by_nook(
     State(pool): State<DBPool>,
     Path(nook_id): Path<String>,
 ) -> ApiResponse<Vec<PostResponse>> {
-    let mut conn = match pool.get() {
-        Ok(conn) => conn,
-        Err(_) => return ApiResponse::error("Database connection error".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
-    };
-
-    match PostService::get_posts_by_nook_id(&mut conn, &nook_id) {
+    match PostService::get_posts_by_nook_id(&pool, &nook_id).await {
         Ok(posts) => ApiResponse::success(
             "Posts retrieved successfully".to_string(),
-            Some(posts),
+            Some(posts.into_iter().map(|p| p.into()).collect()),
             Some(StatusCode::OK),
         ),
         Err(_) => ApiResponse::error("Failed to retrieve posts".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
@@ -62,14 +52,9 @@ async fn get_post(
     State(pool): State<DBPool>,
     Path(id): Path<i32>,
 ) -> ApiResponse<PostResponse> {
-    let mut conn = match pool.get() {
-        Ok(conn) => conn,
-        Err(_) => return ApiResponse::error("Database connection error".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
-    };
-
-    match PostService::get_post_by_id(&mut conn, id) {
+    match PostService::get_post_by_id(&pool, id).await {
         Ok(post) => {
-            ApiResponse::success("Post retrieved successfully".to_string(), Some(post), Some(StatusCode::OK))
+            ApiResponse::success("Post retrieved successfully".to_string(), Some(post.into()), Some(StatusCode::OK))
         }
         Err(_) => ApiResponse::error("Post not found".to_string(), Some(StatusCode::NOT_FOUND)),
     }
@@ -79,13 +64,8 @@ async fn create_post(
     State(pool): State<DBPool>,
     Json(create_dto): Json<CreatePostDto>,
 ) -> ApiResponse<PostResponse> {
-    let mut conn = match pool.get() {
-        Ok(conn) => conn,
-        Err(_) => return ApiResponse::error("Database connection error".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
-    };
-
-    match PostService::create_post(&mut conn, create_dto) {
-        Ok(post) => ApiResponse::success("Post created successfully".to_string(), Some(post), Some(StatusCode::CREATED)),
+    match PostService::create_post(&pool, create_dto.to_new_post()).await {
+        Ok(post) => ApiResponse::success("Post created successfully".to_string(), Some(post.into()), Some(StatusCode::CREATED)),
         Err(_) => ApiResponse::error("Failed to create post".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }
@@ -94,13 +74,15 @@ async fn react_post(
     State(pool): State<DBPool>,
     Json(react_dto): Json<ReactPostDto>,
 ) -> ApiResponse<PostResponse> {
-    let mut conn = match pool.get() {
-        Ok(conn) => conn,
-        Err(_) => return ApiResponse::error("Database connection error".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
-    };
-
-    match PostService::react(&mut conn, react_dto) {
-        Ok(post) => ApiResponse::success("Post reacted successfully".to_string(), Some(post), Some(StatusCode::OK)),
-        Err(_) => ApiResponse::error("Failed to react post".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
+    let post_id = react_dto.post_id;
+    match PostService::react_to_post(&pool, post_id, react_dto.to_reaction()).await {
+        Ok(_) => {
+            // After reacting, fetch the updated post
+            match PostService::get_post_by_id(&pool, post_id).await {
+                Ok(post) => ApiResponse::success("Post reaction added successfully".to_string(), Some(post.into()), Some(StatusCode::OK)),
+                Err(_) => ApiResponse::error("Failed to retrieve updated post".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
+            }
+        }
+        Err(_) => ApiResponse::error("Failed to react to post".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }

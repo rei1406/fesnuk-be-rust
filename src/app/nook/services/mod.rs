@@ -1,49 +1,40 @@
 use crate::app::nook::{
-    dto::{CreateNookDto, NookResponse, UpdateNookDto},
+    dto::{CreateNookDto, NookResponse},
     repositories::NookRepository,
 };
-use diesel::pg::PgConnection;
+use sqlx::PgPool;
 
 pub struct NookService;
 
 impl NookService {
-    pub fn get_all_nooks(
-        conn: &mut PgConnection,
-    ) -> Result<Vec<NookResponse>, diesel::result::Error> {
-        let nooks = NookRepository::find_all(conn)?;
+    pub async fn get_all_nooks(
+        pool: &PgPool,
+    ) -> Result<Vec<NookResponse>, sqlx::Error> {
+        let nooks = NookRepository::find_all(pool).await?;
         Ok(nooks.into_iter().map(NookResponse::from).collect())
     }
 
-    pub fn get_nook_by_id(
-        conn: &mut PgConnection,
+    pub async fn get_nook_by_id(
+        pool: &PgPool,
         id: &str,
-    ) -> Result<NookResponse, diesel::result::Error> {
-        let nook = NookRepository::find_by_id(conn, id)?;
+    ) -> Result<NookResponse, sqlx::Error> {
+        let nook = NookRepository::find_by_id(pool, id).await?;
         Ok(NookResponse::from(nook))
     }
 
-    pub fn create_nook(
-        conn: &mut PgConnection,
+    pub async fn create_nook(
+        pool: &PgPool,
         dto: CreateNookDto,
-    ) -> Result<NookResponse, diesel::result::Error> {
-        let nook = NookRepository::create(conn, dto.to_new_nook())?;
+    ) -> Result<NookResponse, sqlx::Error> {
+        let nook = NookRepository::create(pool, dto.to_new_nook()).await?;
         Ok(NookResponse::from(nook))
     }
 
-    pub fn update_nook(
-        conn: &mut PgConnection,
+    pub async fn delete_nook(
+        pool: &PgPool,
         id: &str,
-        dto: UpdateNookDto,
-    ) -> Result<NookResponse, diesel::result::Error> {
-        let nook = NookRepository::update(conn, id, dto.to_nook_changes())?;
-        Ok(NookResponse::from(nook))
-    }
-
-    pub fn delete_nook(
-        conn: &mut PgConnection,
-        id: &str,
-    ) -> Result<NookResponse, diesel::result::Error> {
-        let nook = NookRepository::delete(conn, id)?;
+    ) -> Result<NookResponse, sqlx::Error> {
+        let nook = NookRepository::delete(pool, id).await?;
         Ok(NookResponse::from(nook))
     }
 }

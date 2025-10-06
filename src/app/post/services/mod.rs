@@ -1,48 +1,43 @@
-use crate::app::post::{
-    dto::{CreatePostDto, PostResponse, ReactPostDto},
-    repositories::PostRepository,
-};
-use diesel::pg::PgConnection;
+use super::models::{NewPost, Post, PostChanges, PostReaction};
+use super::repositories::PostRepository;
+use sqlx::PgPool;
 
 pub struct PostService;
 
 impl PostService {
-    pub fn get_all_posts(
-        conn: &mut PgConnection,
-    ) -> Result<Vec<PostResponse>, diesel::result::Error> {
-        let posts = PostRepository::find_all(conn)?;
-        Ok(posts.into_iter().map(PostResponse::from).collect())
+    pub async fn get_all_posts(pool: &PgPool) -> Result<Vec<Post>, sqlx::Error> {
+        PostRepository::find_all(pool).await
     }
 
-    pub fn get_posts_by_nook_id(
-        conn: &mut PgConnection,
-        nook_id: &str,
-    ) -> Result<Vec<PostResponse>, diesel::result::Error> {
-        let posts = PostRepository::find_by_nook_id(conn, nook_id)?;
-        Ok(posts.into_iter().map(PostResponse::from).collect())
+    pub async fn get_post_by_id(pool: &PgPool, post_id: i32) -> Result<Post, sqlx::Error> {
+        PostRepository::find_by_id(pool, post_id).await
     }
 
-    pub fn get_post_by_id(
-        conn: &mut PgConnection,
-        id: i32,
-    ) -> Result<PostResponse, diesel::result::Error> {
-        let post = PostRepository::find_by_id(conn, id)?;
-        Ok(PostResponse::from(post))
+    pub async fn get_posts_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<Post>, sqlx::Error> {
+        PostRepository::find_by_nook_id(pool, nook_id).await
     }
 
-    pub fn create_post(
-        conn: &mut PgConnection,
-        dto: CreatePostDto,
-    ) -> Result<PostResponse, diesel::result::Error> {
-        let post = PostRepository::create(conn, dto.to_new_post())?;
-        Ok(PostResponse::from(post))
+    pub async fn create_post(pool: &PgPool, new_post: NewPost) -> Result<Post, sqlx::Error> {
+        PostRepository::create(pool, new_post).await
     }
 
-    pub fn react(
-        conn: &mut PgConnection,
-        dto: ReactPostDto,
-    ) -> Result<PostResponse, diesel::result::Error> {
-        let post = PostRepository::react(conn, dto.to_reaction())?;
-        Ok(PostResponse::from(post))
+    pub async fn update_post(
+        pool: &PgPool,
+        post_id: i32,
+        update_post: PostChanges,
+    ) -> Result<Post, sqlx::Error> {
+        PostRepository::update(pool, post_id, update_post).await
+    }
+
+    pub async fn delete_post(pool: &PgPool, post_id: i32) -> Result<Post, sqlx::Error> {
+        PostRepository::delete(pool, post_id).await
+    }
+
+    pub async fn react_to_post(
+        pool: &PgPool,
+        post_id: i32,
+        reaction: PostReaction,
+    ) -> Result<(), sqlx::Error> {
+        PostRepository::react(pool, post_id, reaction.unicode, reaction.action).await
     }
 }

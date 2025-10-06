@@ -1,11 +1,9 @@
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sqlx::FromRow;
 
-#[derive(Queryable, Selectable, Serialize, Deserialize)]
-#[diesel(table_name = crate::schema::comments)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
+#[derive(FromRow, Serialize, Deserialize)]
 pub struct Comment {
     pub id: i32,
     pub post_id: i32,
@@ -18,8 +16,6 @@ pub struct Comment {
     pub deleted_at: Option<NaiveDateTime>,
 }
 
-#[derive(Insertable)]
-#[diesel(table_name = crate::schema::comments)]
 pub struct NewComment {
     pub post_id: i32,
     pub parent_id: Option<i32>,
