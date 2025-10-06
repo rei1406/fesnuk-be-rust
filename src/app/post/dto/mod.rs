@@ -1,6 +1,6 @@
 use crate::app::post::models::PostReaction;
 
-use super::models::{NewPost, Post, PostChanges};
+use super::models::{NewPost, Post, PostChanges, PostWithNook};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -70,6 +70,7 @@ pub struct PostResponse {
     pub attachments: Value,
     pub reactions: Value,
     pub nook_id: String,
+    pub nook_name: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -83,6 +84,23 @@ impl From<Post> for PostResponse {
             attachments: post.attachments,
             reactions: post.reactions,
             nook_id: post.nook_id,
+            nook_name: String::new(), // Default empty string for backward compatibility
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+        }
+    }
+}
+
+impl From<PostWithNook> for PostResponse {
+    fn from(post: PostWithNook) -> Self {
+        Self {
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            attachments: post.attachments,
+            reactions: post.reactions,
+            nook_id: post.nook_id,
+            nook_name: post.nook_name,
             created_at: post.created_at,
             updated_at: post.updated_at,
         }

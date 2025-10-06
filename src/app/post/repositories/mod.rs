@@ -1,38 +1,41 @@
-use super::models::{NewPost, Post, PostChanges};
+use super::models::{NewPost, Post, PostChanges, PostWithNook};
 use sqlx::PgPool;
 
 pub struct PostRepository;
 
 impl PostRepository {
-    pub async fn find_all(pool: &PgPool) -> Result<Vec<Post>, sqlx::Error> {
+    pub async fn find_all(pool: &PgPool) -> Result<Vec<PostWithNook>, sqlx::Error> {
         sqlx::query_as!(
-            Post,
-            "SELECT id, title, content, attachments, reactions, nook_id, created_at, updated_at, deleted_at 
-             FROM posts 
-             WHERE deleted_at IS NULL"
+            PostWithNook,
+            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at 
+             FROM posts p
+             JOIN nooks n ON p.nook_id = n.id
+             WHERE p.deleted_at IS NULL AND n.deleted_at IS NULL"
         )
         .fetch_all(pool)
         .await
     }
 
-    pub async fn find_by_id(pool: &PgPool, post_id: i32) -> Result<Post, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, post_id: i32) -> Result<PostWithNook, sqlx::Error> {
         sqlx::query_as!(
-            Post,
-            "SELECT id, title, content, attachments, reactions, nook_id, created_at, updated_at, deleted_at 
-             FROM posts 
-             WHERE id = $1 AND deleted_at IS NULL",
+            PostWithNook,
+            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at 
+             FROM posts p
+             JOIN nooks n ON p.nook_id = n.id
+             WHERE p.id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL",
             post_id
         )
         .fetch_one(pool)
         .await
     }
 
-    pub async fn find_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<Post>, sqlx::Error> {
+    pub async fn find_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<PostWithNook>, sqlx::Error> {
         sqlx::query_as!(
-            Post,
-            "SELECT id, title, content, attachments, reactions, nook_id, created_at, updated_at, deleted_at 
-             FROM posts 
-             WHERE nook_id = $1 AND deleted_at IS NULL",
+            PostWithNook,
+            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at 
+             FROM posts p
+             JOIN nooks n ON p.nook_id = n.id
+             WHERE p.nook_id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL",
             nook_id
         )
         .fetch_all(pool)

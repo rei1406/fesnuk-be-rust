@@ -16,6 +16,20 @@ pub struct Post {
     pub deleted_at: Option<NaiveDateTime>,
 }
 
+#[derive(FromRow, Serialize, Deserialize)]
+pub struct PostWithNook {
+    pub id: i32,
+    pub title: String,
+    pub content: String,
+    pub attachments: Value,
+    pub reactions: Value,
+    pub nook_id: String,
+    pub nook_name: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub deleted_at: Option<NaiveDateTime>,
+}
+
 pub struct NewPost {
     pub title: String,
     pub content: String,
