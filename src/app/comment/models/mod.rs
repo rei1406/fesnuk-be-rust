@@ -14,6 +14,7 @@ pub struct Comment {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub deleted_at: Option<NaiveDateTime>,
+    pub reply_count: Option<i64>,
 }
 
 pub struct NewComment {

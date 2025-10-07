@@ -12,7 +12,8 @@ impl PostRepository {
              JOIN nooks n ON p.nook_id = n.id   
              LEFT JOIN comments c ON p.id = c.post_id
              WHERE p.deleted_at IS NULL AND n.deleted_at IS NULL
-             GROUP BY p.id, n.name"
+             GROUP BY p.id, n.name
+             ORDER BY p.created_at DESC"
         )
         .fetch_all(pool)
         .await
@@ -41,7 +42,8 @@ impl PostRepository {
              JOIN nooks n ON p.nook_id = n.id
              LEFT JOIN comments c ON p.id = c.post_id
              WHERE p.nook_id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL
-             GROUP BY p.id, n.name",
+             GROUP BY p.id, n.name
+             ORDER BY p.created_at DESC",
             nook_id
         )
         .fetch_all(pool)

@@ -22,6 +22,14 @@ impl CommentService {
         Ok(comments.into_iter().map(CommentResponse::from).collect())
     }
 
+    pub async fn get_replies_by_comment_id(
+        pool: &PgPool,
+        parent_id: i32,
+    ) -> Result<Vec<CommentResponse>, Error> {
+        let comments = CommentRepository::find_replies(pool, parent_id).await?;
+        Ok(comments.into_iter().map(CommentResponse::from).collect())
+    }
+
     pub async fn get_comment_by_id(
         pool: &PgPool,
         comment_id: i32,

@@ -81,7 +81,7 @@ impl From<Comment> for CommentResponse {
             reactions: comment.reactions,
             created_at: comment.created_at,
             updated_at: comment.updated_at,
-            reply_count: 0, // Default to 0, can be updated separately if needed
+            reply_count: comment.reply_count.unwrap_or(0),
         }
     }
 }

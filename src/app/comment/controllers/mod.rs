@@ -22,6 +22,7 @@ pub fn comment_routes() -> Router<DBPool> {
         .route("/{id}", get(get_comment))
         .route("/{id}", delete(delete_comment))
         .route("/post/{post_id}", get(get_comments_by_post))
+        .route("/{parent_id}/replies", get(get_replies_by_comment))
         .route("/reply", post(reply_to_comment))
 }
 
@@ -41,6 +42,20 @@ async fn get_comments_by_post(
     Path(post_id): Path<i32>,
 ) -> ApiResponse<Vec<CommentResponse>> {
     match CommentService::get_comments_by_post_id(&pool, post_id).await {
+        Ok(comments) => ApiResponse::success(
+            "Comments retrieved successfully".to_string(),
+            Some(comments),
+            Some(StatusCode::OK),
+        ),
+        Err(_) => ApiResponse::error("Failed to retrieve comments".to_string(), Some(StatusCode::INTERNAL_SERVER_ERROR)),
+    }
+}
+
+async fn get_replies_by_comment(
+    State(pool): State<DBPool>,
+    Path(parent_id): Path<i32>,
+) -> ApiResponse<Vec<CommentResponse>> {
+    match CommentService::get_replies_by_comment_id(&pool, parent_id).await {
         Ok(comments) => ApiResponse::success(
             "Comments retrieved successfully".to_string(),
             Some(comments),
