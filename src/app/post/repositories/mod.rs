@@ -1,41 +1,47 @@
-use super::models::{NewPost, Post, PostChanges, PostWithNook};
+use super::models::{NewPost, Post, PostChanges, PostDetail};
 use sqlx::PgPool;
 
 pub struct PostRepository;
 
 impl PostRepository {
-    pub async fn find_all(pool: &PgPool) -> Result<Vec<PostWithNook>, sqlx::Error> {
+    pub async fn find_all(pool: &PgPool) -> Result<Vec<PostDetail>, sqlx::Error> {
         sqlx::query_as!(
-            PostWithNook,
-            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at 
+            PostDetail,
+            "SELECT p.*, n.name as nook_name, COALESCE(COUNT(c.id), 0) as comment_count
              FROM posts p
-             JOIN nooks n ON p.nook_id = n.id
-             WHERE p.deleted_at IS NULL AND n.deleted_at IS NULL"
+             JOIN nooks n ON p.nook_id = n.id   
+             LEFT JOIN comments c ON p.id = c.post_id
+             WHERE p.deleted_at IS NULL AND n.deleted_at IS NULL
+             GROUP BY p.id, n.name"
         )
         .fetch_all(pool)
         .await
     }
 
-    pub async fn find_by_id(pool: &PgPool, post_id: i32) -> Result<PostWithNook, sqlx::Error> {
+    pub async fn find_by_id(pool: &PgPool, post_id: i32) -> Result<PostDetail, sqlx::Error> {
         sqlx::query_as!(
-            PostWithNook,
-            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at 
+            PostDetail,
+            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at, COALESCE(COUNT(c.id), 0) as comment_count
              FROM posts p
              JOIN nooks n ON p.nook_id = n.id
-             WHERE p.id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL",
+             LEFT JOIN comments c ON p.id = c.post_id
+             WHERE p.id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL
+             GROUP BY p.id, n.name",
             post_id
         )
         .fetch_one(pool)
         .await
     }
 
-    pub async fn find_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<PostWithNook>, sqlx::Error> {
+    pub async fn find_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<PostDetail>, sqlx::Error> {
         sqlx::query_as!(
-            PostWithNook,
-            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at 
+            PostDetail,
+            "SELECT p.id, p.title, p.content, p.attachments, p.reactions, p.nook_id, n.name as nook_name, p.created_at, p.updated_at, p.deleted_at, COALESCE(COUNT(c.id), 0) as comment_count
              FROM posts p
              JOIN nooks n ON p.nook_id = n.id
-             WHERE p.nook_id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL",
+             LEFT JOIN comments c ON p.id = c.post_id
+             WHERE p.nook_id = $1 AND p.deleted_at IS NULL AND n.deleted_at IS NULL
+             GROUP BY p.id, n.name",
             nook_id
         )
         .fetch_all(pool)

@@ -17,7 +17,7 @@ pub struct Post {
 }
 
 #[derive(FromRow, Serialize, Deserialize)]
-pub struct PostWithNook {
+pub struct PostDetail {
     pub id: i32,
     pub title: String,
     pub content: String,
@@ -28,6 +28,7 @@ pub struct PostWithNook {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub deleted_at: Option<NaiveDateTime>,
+    pub comment_count: Option<i64>,
 }
 
 pub struct NewPost {

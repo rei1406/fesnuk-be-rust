@@ -1,19 +1,19 @@
-use super::models::{NewPost, Post, PostChanges, PostReaction, PostWithNook};
+use super::models::{NewPost, Post, PostChanges, PostReaction, PostDetail};
 use super::repositories::PostRepository;
 use sqlx::PgPool;
 
 pub struct PostService;
 
 impl PostService {
-    pub async fn get_all_posts(pool: &PgPool) -> Result<Vec<PostWithNook>, sqlx::Error> {
+    pub async fn get_all_posts(pool: &PgPool) -> Result<Vec<PostDetail>, sqlx::Error> {
         PostRepository::find_all(pool).await
     }
 
-    pub async fn get_post_by_id(pool: &PgPool, post_id: i32) -> Result<PostWithNook, sqlx::Error> {
+    pub async fn get_post_by_id(pool: &PgPool, post_id: i32) -> Result<PostDetail, sqlx::Error> {
         PostRepository::find_by_id(pool, post_id).await
     }
 
-    pub async fn get_posts_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<PostWithNook>, sqlx::Error> {
+    pub async fn get_posts_by_nook_id(pool: &PgPool, nook_id: &str) -> Result<Vec<PostDetail>, sqlx::Error> {
         PostRepository::find_by_nook_id(pool, nook_id).await
     }
 
